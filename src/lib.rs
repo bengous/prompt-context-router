@@ -1,6 +1,7 @@
 //! Routes Claude Code prompt keywords to project context files.
 
 mod claude;
+mod codex;
 mod config;
 mod routing;
 
