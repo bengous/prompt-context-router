@@ -7,7 +7,7 @@ use regex::Regex;
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::hook::router_warning;
+use crate::routing::router_warning;
 
 #[derive(Debug, Error)]
 pub enum ConfigError {
