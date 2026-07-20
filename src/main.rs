@@ -1,11 +1,12 @@
 use std::env;
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 use prompt_context_router::{
-    ConfigError, HookOutput, load_config, process_hook, router_warning, validate_route_files,
+    ConfigError, HookOutput, load_config, process_codex_hook, process_hook, router_warning,
+    validate_route_files,
 };
 use thiserror::Error;
 
@@ -19,6 +20,12 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Command {
     Hook {
+        #[arg(long)]
+        config: PathBuf,
+    },
+    CodexHook {
+        #[arg(long)]
+        project_root: PathBuf,
         #[arg(long)]
         config: PathBuf,
     },
@@ -49,7 +56,60 @@ fn main() -> ExitCode {
             run_hook(&config);
             ExitCode::SUCCESS
         }
+        Command::CodexHook {
+            project_root,
+            config,
+        } => {
+            run_codex_hook(&config, &project_root);
+            ExitCode::SUCCESS
+        }
     }
+}
+
+fn run_codex_hook(config: &Path, project_root: &Path) {
+    let mut input = String::new();
+    let result = match io::stdin().read_to_string(&mut input) {
+        Ok(_) => process_codex_hook(config, project_root, &codex_cache_root(), &input),
+        Err(error) => {
+            let output = HookOutput::warning(router_warning(format_args!(
+                "could not read hook input: {error}"
+            )));
+            let _ = write_codex_output(&output);
+            return;
+        }
+    };
+
+    let output_written = result.output().is_none_or(write_codex_output);
+    if output_written {
+        result.commit();
+    }
+}
+
+fn write_codex_output(output: &HookOutput) -> bool {
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
+    if let Err(error) = serde_json::to_writer(&mut stdout, output) {
+        eprintln!("prompt context router could not write hook output: {error}");
+        return false;
+    }
+    if let Err(error) = stdout.flush() {
+        eprintln!("prompt context router could not flush hook output: {error}");
+        return false;
+    }
+    true
+}
+
+fn codex_cache_root() -> PathBuf {
+    env::var_os("XDG_CACHE_HOME")
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| {
+            env::var_os("HOME")
+                .filter(|path| !path.is_empty())
+                .map(|home| PathBuf::from(home).join(".cache"))
+        })
+        .unwrap_or_else(|| PathBuf::from(".cache"))
+        .join("prompt-context-router")
 }
 
 fn check(config: &Path) -> Result<(), MainError> {

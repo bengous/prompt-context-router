@@ -1,11 +1,3 @@
-#![cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "Codex dispatch lands in the next implementation slice"
-    )
-)]
-
 use std::collections::BTreeSet;
 use std::fs;
 use std::io;
