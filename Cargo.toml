@@ -1,7 +1,14 @@
 [package]
 name = "prompt-context-router"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.96.0"
+description = "Claude Code hook that routes prompt keywords to project context files"
+license = "MIT"
+repository = "https://github.com/bengous/prompt-context-router"
+readme = "README.md"
+keywords = ["claude", "hooks", "context", "cli"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
@@ -14,15 +21,13 @@ thiserror = "2"
 [dev-dependencies]
 tempfile = "3"
 
-# Keep release builds fast: the hook recompiles via `cargo run` whenever
-# source mtimes change, on the blocking UserPromptSubmit path.
+# Keep startup fast on the blocking UserPromptSubmit path.
 [profile.release]
 strip = true
 
 [lints.rust]
 unsafe_code = "forbid"
-# No blanket `warnings = "deny"`: a future rustc warning must not break the
-# runtime-compiled hook. CI strictness lives in scripts/check-rust.sh.
+warnings = "deny"
 missing_debug_implementations = "deny"
 
 [lints.clippy]

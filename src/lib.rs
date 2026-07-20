@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
-use jsonc_parser::{parse_to_serde_value, ParseOptions};
+use jsonc_parser::{ParseOptions, parse_to_serde_value};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -780,7 +780,9 @@ mod tests {
         let config = CONFIG.replace(".claude/rules/claudex.md", "../claudex.md");
         let error = load_test_config(project.path(), &config).err();
 
-        assert!(error.is_some_and(|error| error.to_string().contains("relative path without `..`")));
+        assert!(
+            error.is_some_and(|error| error.to_string().contains("relative path without `..`"))
+        );
         Ok(())
     }
 
@@ -1028,7 +1030,9 @@ mod tests {
             (output.system_message.as_deref(), context(&output)),
             (
                 None,
-                Some("[prompt-context-route:claudex]\nRead .claude/rules/claudex.md before making related claims or changes.")
+                Some(
+                    "[prompt-context-route:claudex]\nRead .claude/rules/claudex.md before making related claims or changes."
+                )
             )
         );
         Ok(())
@@ -1071,10 +1075,12 @@ mod tests {
             })
             .collect();
 
-        assert!(outputs.iter().all(|output| output
-            .as_ref()
-            .and_then(context)
-            .is_some_and(|context| context.contains("[prompt-context-route:claudex]"))));
+        assert!(outputs.iter().all(|output| {
+            output
+                .as_ref()
+                .and_then(context)
+                .is_some_and(|context| context.contains("[prompt-context-route:claudex]"))
+        }));
         Ok(())
     }
 
@@ -1140,8 +1146,10 @@ mod tests {
             return Err("prompt after missed restore did not inject context".into());
         };
 
-        assert!(context(&output)
-            .is_some_and(|context| context.contains("[prompt-context-route:claudex]")));
+        assert!(
+            context(&output)
+                .is_some_and(|context| context.contains("[prompt-context-route:claudex]"))
+        );
         Ok(())
     }
 
@@ -1168,8 +1176,10 @@ mod tests {
             return Err("compact did not restore pre-boundary context".into());
         };
 
-        assert!(context(&output)
-            .is_some_and(|context| context.contains("[prompt-context-route:claudex]")));
+        assert!(
+            context(&output)
+                .is_some_and(|context| context.contains("[prompt-context-route:claudex]"))
+        );
         Ok(())
     }
 
@@ -1185,12 +1195,12 @@ mod tests {
         );
         let input_warning = process_hook(&invalid_config, project.path(), "{}");
 
-        assert!([config_warning, input_warning]
-            .iter()
-            .all(|output| output
+        assert!(
+            [config_warning, input_warning].iter().all(|output| output
                 .as_ref()
                 .is_some_and(|output| output.system_message.is_some()
-                    && output.hook_specific_output.is_none())));
+                    && output.hook_specific_output.is_none()))
+        );
         Ok(())
     }
 }

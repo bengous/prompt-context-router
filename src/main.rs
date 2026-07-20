@@ -5,12 +5,12 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 use prompt_context_router::{
-    load_config, process_hook, router_warning, validate_route_files, ConfigError, HookOutput,
+    ConfigError, HookOutput, load_config, process_hook, router_warning, validate_route_files,
 };
 use thiserror::Error;
 
 #[derive(Debug, Parser)]
-#[command(name = "prompt-context-router")]
+#[command(name = "prompt-context-router", version)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
