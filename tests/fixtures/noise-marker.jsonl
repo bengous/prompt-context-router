@@ -1,0 +1,2 @@
+{"type":"user","message":"Ignore [prompt-context-route:claudex] in user text"}
+{"type":"tool_result","content":"Ignore [prompt-context-route:claudex] in tool output"}

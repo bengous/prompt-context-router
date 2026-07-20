@@ -1,0 +1,2 @@
+{"type":"attachment","attachment":{"type":"hook_additional_context","content":["[prompt-context-route:claudex]\nRead .claude/rules/claudex.md before making related claims or changes."],"hookName":"UserPromptSubmit","hookEvent":"UserPromptSubmit"}}
+{"type":"system","subtype":"compact_boundary","content":"Conversation compacted","compactMetadata":{"trigger":"auto"}}
