@@ -1,13 +1,13 @@
 [package]
 name = "prompt-context-router"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.96.0"
-description = "Claude Code hook that routes prompt keywords to project context files"
+description = "Claude Code and Codex CLI hook for prompt-triggered project context"
 license = "MIT"
 repository = "https://github.com/bengous/prompt-context-router"
 readme = "README.md"
-keywords = ["claude", "hooks", "context", "cli"]
+keywords = ["claude", "codex", "hooks", "context", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
