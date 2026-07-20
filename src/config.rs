@@ -58,6 +58,7 @@ struct RawRoute {
     id: String,
     keywords: Vec<String>,
     file: String,
+    note: Option<String>,
 }
 
 #[derive(Debug)]
@@ -69,6 +70,7 @@ pub struct Config {
 pub struct Route {
     pub(crate) id: String,
     pub(crate) file: String,
+    pub(crate) note: Option<String>,
     pub(crate) marker: String,
     matcher: Regex,
 }
@@ -151,6 +153,20 @@ fn validate_config(raw: RawConfig) -> Result<Config, ConfigError> {
                 raw_route.id
             )));
         }
+        if let Some(note) = &raw_route.note {
+            if note.trim().is_empty() {
+                return Err(ConfigError::Invalid(format!(
+                    "route {route_number} (`{}`) note must not be empty or whitespace-only",
+                    raw_route.id
+                )));
+            }
+            if note.contains("[prompt-context-route:") {
+                return Err(ConfigError::Invalid(format!(
+                    "route {route_number} (`{}`) note must not contain `[prompt-context-route:`",
+                    raw_route.id
+                )));
+            }
+        }
 
         let mut escaped_keywords = Vec::with_capacity(raw_route.keywords.len());
         for (keyword_index, keyword) in raw_route.keywords.iter().enumerate() {
@@ -203,6 +219,7 @@ fn validate_config(raw: RawConfig) -> Result<Config, ConfigError> {
             marker: route_marker(&raw_route.id),
             id: raw_route.id,
             file: raw_route.file,
+            note: raw_route.note,
             matcher,
         });
     }
@@ -324,6 +341,44 @@ mod tests {
         let error = load_test_config(project.path(), &config).err();
 
         assert!(error.is_some_and(|error| error.to_string().contains("at least one keyword")));
+        Ok(())
+    }
+
+    #[test]
+    fn config_rejects_empty_or_whitespace_note() -> Result<(), Box<dyn Error>> {
+        let project = test_project()?;
+        for note in ["", "   "] {
+            let config = CONFIG.replace(
+                "\"file\": \".claude/rules/claudex.md\",",
+                &format!(
+                    "\"file\": \".claude/rules/claudex.md\",\n              \"note\": \"{note}\","
+                ),
+            );
+            let error = load_test_config(project.path(), &config).err();
+
+            assert!(error.is_some_and(|error| {
+                error
+                    .to_string()
+                    .contains("note must not be empty or whitespace-only")
+            }));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn config_rejects_note_containing_marker_prefix() -> Result<(), Box<dyn Error>> {
+        let project = test_project()?;
+        let config = CONFIG.replace(
+            "\"file\": \".claude/rules/claudex.md\",",
+            "\"file\": \".claude/rules/claudex.md\",\n              \"note\": \"Never echo [prompt-context-route: here\",",
+        );
+        let error = load_test_config(project.path(), &config).err();
+
+        assert!(error.is_some_and(|error| {
+            error
+                .to_string()
+                .contains("note must not contain `[prompt-context-route:`")
+        }));
         Ok(())
     }
 

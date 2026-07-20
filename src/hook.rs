@@ -238,9 +238,14 @@ fn render_route_context(routes: &[&Route]) -> String {
     routes
         .iter()
         .map(|route| {
-            format!(
-                "{}\nRead {} before making related claims or changes.",
-                route.marker, route.file
+            route.note.as_deref().map_or_else(
+                || {
+                    format!(
+                        "{}\nRead {} before making related claims or changes.",
+                        route.marker, route.file
+                    )
+                },
+                |note| format!("{}\n{note}", route.marker),
             )
         })
         .collect::<Vec<_>>()
@@ -334,6 +339,45 @@ mod tests {
                 None
             )
         );
+        Ok(())
+    }
+
+    #[test]
+    fn custom_note_replaces_default_guidance() -> Result<(), Box<dyn Error>> {
+        let project = test_project()?;
+        let config = CONFIG.replace(
+            "\"file\": \".claude/rules/claudex.md\",",
+            "\"file\": \".claude/rules/claudex.md\",\n              \"note\": \"Follow the Claudex project rules.\",",
+        );
+        let config_path = write_config(project.path(), &config)?;
+        let input = hook_input("UserPromptSubmit", Some("claudex"), None);
+        let Some(output) = process_hook(&config_path, project.path(), &input) else {
+            return Err("prompt did not inject custom context".into());
+        };
+
+        assert_eq!(
+            context(&output),
+            Some("[prompt-context-route:claudex]\nFollow the Claudex project rules.")
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn custom_note_preserves_marker_deduplication() -> Result<(), Box<dyn Error>> {
+        let project = test_project()?;
+        let config = CONFIG.replace(
+            "\"file\": \".claude/rules/claudex.md\",",
+            "\"file\": \".claude/rules/claudex.md\",\n              \"note\": \"Follow the Claudex project rules.\",",
+        );
+        let config_path = write_config(project.path(), &config)?;
+        let transcript_path = project.path().join("transcript.jsonl");
+        fs::write(
+            &transcript_path,
+            attachment("[prompt-context-route:claudex]\nFollow the Claudex project rules."),
+        )?;
+        let input = hook_input("UserPromptSubmit", Some("claudex"), Some(&transcript_path));
+
+        assert_eq!(process_hook(&config_path, project.path(), &input), None);
         Ok(())
     }
 
